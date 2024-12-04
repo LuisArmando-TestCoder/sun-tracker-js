@@ -1,5 +1,8 @@
 import { getTimes } from 'suncalc';
 
+const SUNRISE = "sunrise";
+const SUNSET = "sunset";
+
 export interface AfterOptions {
     lat?: number;
     lon?: number;
@@ -29,13 +32,13 @@ function isAfter(afterOption: "sunrise" | "sunset", {
             const currentHour = time.getHours();
             const afterHour = after.getHours();
 
-            let afterDawn = currentHour > afterHour;
-            
+            let isAfterTime = currentHour > afterHour;
+
             if (currentHour === afterHour) {
-                afterDawn = time.getMinutes() >= after.getMinutes();
+                isAfterTime = time.getMinutes() >= after.getMinutes();
             }
 
-            resolve(afterDawn);
+            resolve(isAfterTime);
         }
 
         if (useGeolocation && typeof navigator !== 'undefined' && 'geolocation' in navigator) {
@@ -46,7 +49,7 @@ function isAfter(afterOption: "sunrise" | "sunset", {
                     checkWithCoordinates(userLat, userLon);
                 },
                 err => {
-                    console.warn('Geolocation not allowed or failed, using default or provided coords.');
+                    console.warn('Geolocation not allowed or failed, using default or provided coords.', err);
                     const finalLat = lat !== null ? lat : defaultLat;
                     const finalLon = lon !== null ? lon : defaultLon;
                     checkWithCoordinates(finalLat, finalLon);
@@ -60,20 +63,37 @@ function isAfter(afterOption: "sunrise" | "sunset", {
     });
 }
 
-const SUNRISE = "sunrise";
-
 /**
  * Returns a Promise that resolves to `true` if it is currently after dawn at the given location.
 */
-export function isAfterDawn(afterOptions: AfterOptions = {}): Promise<boolean> {
-    return isAfter(SUNRISE, afterOptions);
+export async function isAfterSunrise(afterOptions: AfterOptions) {
+    return await isAfter(SUNRISE, afterOptions);
 }
-
-const SUNSET = "sunset";
 
 /**
  * Returns a Promise that resolves to `true` if it is currently after sunset at the given location.
  */
-export function isAfterSunset(afterOptions: AfterOptions = {}): Promise<boolean> {
-    return isAfter(SUNSET, afterOptions);
+export async function isAfterSunset(afterOptions: AfterOptions) {
+    return await isAfter(SUNSET, afterOptions);
+}
+
+/**
+ * Returns a Promise that resolves to `true` if it is currently daylight.
+ */
+export async function isDaylight(afterOptions: AfterOptions) {
+    const [
+        isItAfterSunrise,
+        isItAfterSunset
+    ] = await Promise.all([isAfterSunrise(afterOptions), isAfterSunset(afterOptions)]);
+
+    return isItAfterSunrise && !isItAfterSunset;
+}
+
+/**
+ * Returns a Promise that resolves to `true` if it is currently nightime.
+ */
+export async function isNightTime(afterOptions: AfterOptions) {
+    const isItAfterSunset = await isAfterSunset(afterOptions);
+
+    return isItAfterSunset;
 }
