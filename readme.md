@@ -1,4 +1,4 @@
-# my-sundawn-lib
+# sun-tracker-js
 
 A simple TypeScript library to determine if it is currently after dawn or after sunset at a given location using [SunCalc](https://github.com/mourner/suncalc).
 
@@ -13,7 +13,7 @@ A simple TypeScript library to determine if it is currently after dawn or after 
 ## Installation
 
 ```bash
-npm install my-sundawn-lib
+npm install sun-tracker-js
 ```
 
 ## Usage Examples
@@ -21,7 +21,7 @@ npm install my-sundawn-lib
 ### Checking After Dawn
 
 ```typescript
-import { isAfterDawn } from 'my-sundawn-lib';
+import { isAfterDawn } from 'sun-tracker-js';
 
 isAfterDawn().then(isDaylight => {
   console.log(`Equator: Is it after dawn? ${isDaylight}`);
@@ -31,7 +31,7 @@ isAfterDawn().then(isDaylight => {
 ### Checking After Sunset
 
 ```typescript
-import { isAfterSunset } from 'my-sundawn-lib';
+import { isAfterSunset } from 'sun-tracker-js';
 
 isAfterSunset().then(isNight => {
   console.log(`Equator: Is it after sunset? ${isNight}`);
@@ -98,14 +98,14 @@ isAfterSunset({ useGeolocation: true }).then(isNight => {
 3. Otherwise, defaults to the Equator (0,0).
 
 **Earth Tilt Consideration:**
-`my-sundawn-lib` relies on `suncalc`, which computes times based on latitude, longitude, and date. This inherently accounts for Earth's tilt and seasonal changes.
+`sun-tracker-js` relies on `suncalc`, which computes times based on latitude, longitude, and date. This inherently accounts for Earth's tilt and seasonal changes.
 
 ## Example in Browser
 
 If you're using this in a browser environment with bundling:
 
 ```typescript
-import { isAfterDawn, isAfterSunset } from 'my-sundawn-lib';
+import { isAfterDawn, isAfterSunset } from 'sun-tracker-js';
 
 document.getElementById('checkDawnBtn')?.addEventListener('click', () => {
   isAfterDawn({ useGeolocation: true }).then(isDaylight => {
@@ -124,8 +124,8 @@ document.getElementById('checkSunsetBtn')?.addEventListener('click', () => {
 
 1. Clone the repository:
    ```bash
-   git clone https://github.com/yourusername/my-sundawn-lib.git
-   cd my-sundawn-lib
+   git clone https://github.com/yourusername/sun-tracker-js.git
+   cd sun-tracker-js
    ```
 
 2. Install dependencies:
