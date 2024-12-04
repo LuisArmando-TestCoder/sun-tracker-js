@@ -1,14 +1,27 @@
-# sun-tracker-js
+# Sun Tracker JS
 
-A TypeScript library that helps determine whether it is after sunrise, after sunset, currently daylight, or nighttime at a given location, using [SunCalc](https://github.com/mourner/suncalc).
+A TypeScript/JavaScript utility that determines whether it's currently after sunrise, after sunset, daylight, or nighttime at a given location. It also provides a chainable interface to react to changes in sunlight conditions over time.
 
-**Key Features:**
-- Functions: `isAfterSunrise`, `isAfterSunset`, `isDaylight`, `isNightTime`.
-- Each returns a Promise with a boolean result.
-- Defaults to the Equator if no location is provided.
-- Optionally uses browser’s geolocation if requested.
-- Automatically accounts for Earth's tilt and seasonal changes, as `suncalc` calculations depend on date and coordinates.
-- Written in TypeScript with type definitions included.
+This library leverages [SunCalc](https://github.com/mourner/suncalc) to accurately compute sunrise and sunset times, inherently accounting for Earth’s tilt, seasons, and your chosen coordinates.
+
+## Features
+
+- **Check Sun Status:**  
+  - `isAfterSunrise(...)`: Returns `true` if current time is after sunrise.
+  - `isAfterSunset(...)`: Returns `true` if current time is after sunset.
+  - `isDaylight(...)`: Returns `true` if it's currently daylight (after sunrise but before sunset).
+  - `isNightTime(...)`: Returns `true` if it's currently nighttime (after sunset).
+
+- **Location Options:**  
+  - Provide `lat` and `lon` directly for any location.
+  - Use the browser’s geolocation by setting `useGeolocation: true` (requires HTTPS and user permission).
+  - Defaults to the Equator (0,0) if no coordinates are provided and geolocation is not used.
+
+- **Automated Sunlight Change Notifications:**  
+  `onSunlightChange(...)` returns a chainable object that can periodically check the status and run callbacks on transitions:
+  - `atNight(callback)`: Fires `callback` once when transitioning from daylight to nighttime.
+  - `atDaylight(callback)`: Fires `callback` once when transitioning from night to daylight.
+  - `atSunlightToggle(callback)`: Fires `callback` whenever daylight status toggles (either day→night or night→day).
 
 ## Installation
 
@@ -16,173 +29,96 @@ A TypeScript library that helps determine whether it is after sunrise, after sun
 npm install sun-tracker-js
 ```
 
-## Usage Examples (Async/Await)
+## Usage Examples
 
-### Checking After Sunrise
-
-```typescript
-import { isAfterSunrise } from 'sun-tracker-js';
-
-(async () => {
-  const isDaylightNow = await isAfterSunrise();
-  console.log(`Equator: Is it after sunrise? ${isDaylightNow}`);
-})();
-```
-
-### Checking After Sunset
+### Basic Status Checks
 
 ```typescript
-import { isAfterSunset } from 'sun-tracker-js';
+import { isAfterSunrise, isAfterSunset, isDaylight, isNightTime } from 'sun-tracker-js';
 
-(async () => {
-  const isNightNow = await isAfterSunset();
-  console.log(`Equator: Is it after sunset? ${isNightNow}`);
-})();
+// Check if after sunrise at a specific location (Madrid, Spain)
+isAfterSunrise({ lat: 40.4168, lon: -3.7038 }).then(result => {
+  console.log(`Is it after sunrise in Madrid? ${result}`);
+});
+
+// Check if after sunset using browser geolocation
+isAfterSunset({ useGeolocation: true }).then(result => {
+  console.log(`Is it after sunset at your location? ${result}`);
+});
+
+// Check if currently daylight at the Equator (default location)
+isDaylight().then(result => {
+  console.log(`Is it daylight at the Equator? ${result}`);
+});
+
+// Check if currently nighttime at a given time
+const customTime = new Date('2024-12-24T23:00:00');
+isNightTime({ lat: 34.0522, lon: -118.2437, time: customTime }).then(result => {
+  console.log(`Is it night in Los Angeles at 11PM on Dec 24, 2024? ${result}`);
+});
 ```
 
-### Checking If It's Daylight
+### Reacting to Sunlight Changes Over Time
+
+Use `onSunlightChange()` to periodically check conditions (every `seconds` seconds) and run callbacks only when a transition occurs.
 
 ```typescript
-import { isDaylight } from 'sun-tracker-js';
+import { onSunlightChange } from 'sun-tracker-js';
 
-(async () => {
-  const daylight = await isDaylight({ lat: 40.4168, lon: -3.7038 });
-  console.log(`Madrid: Is it daylight now? ${daylight}`);
-})();
+// Check every 60 seconds at your current location
+onSunlightChange(60, { useGeolocation: true })
+  .atNight(() => {
+    console.log("It just turned to night!");
+  })
+  .atDaylight(() => {
+    console.log("It's now daylight!");
+  })
+  .atSunlightToggle(hasSunlight => {
+    console.log(`Sunlight status changed. Now: ${hasSunlight ? 'Day' : 'Night'}.`);
+  });
 ```
 
-### Checking If It's Nighttime
-
-```typescript
-import { isNightTime } from 'sun-tracker-js';
-
-(async () => {
-  const night = await isNightTime({ useGeolocation: true });
-  console.log(`Your location: Is it nighttime now? ${night}`);
-})();
-```
-
-### Using Geolocation (Browser Only)
-
-```typescript
-import { isAfterSunrise, isAfterSunset } from 'sun-tracker-js';
-
-(async () => {
-  const afterSunrise = await isAfterSunrise({ useGeolocation: true });
-  console.log(`Your location: Is it after sunrise? ${afterSunrise}`);
-
-  const afterSunset = await isAfterSunset({ useGeolocation: true });
-  console.log(`Your location: Is it after sunset? ${afterSunset}`);
-})();
-```
-
-**Note:** Geolocation requires a secure context (HTTPS) and the user's permission.
+**Note:**  
+- `onSunlightChange()` sets up intervals for each chained condition you add.
+- Each callback will fire when a state transition is detected (e.g., from daylight to night or vice versa).
 
 ## API
 
 ### `isAfterSunrise(options?: AfterOptions)`
-Checks if the current time is after sunrise.
-
-**Parameters:**
-- `lat?: number`
-- `lon?: number`
-- `useGeolocation?: boolean`
-- `time?: Date` (defaults to now)
-
-**Returns:**  
-`Promise<boolean>`
+- Checks if the current (or specified) time is after the sunrise at the given location.
+- **Returns:** `Promise<boolean>`
 
 ### `isAfterSunset(options?: AfterOptions)`
-Checks if the current time is after sunset.
-
-**Parameters:**
-- `lat?: number`
-- `lon?: number`
-- `useGeolocation?: boolean`
-- `time?: Date` (defaults to now)
-
-**Returns:**  
-`Promise<boolean>`
+- Checks if the current (or specified) time is after the sunset at the given location.
+- **Returns:** `Promise<boolean>`
 
 ### `isDaylight(options?: AfterOptions)`
-Checks if it's currently daylight.  
-This returns `true` if it's after sunrise and not yet after sunset.
-
-**Parameters:**
-- `lat?: number`
-- `lon?: number`
-- `useGeolocation?: boolean`
-- `time?: Date` (defaults to now)
-
-**Returns:**  
-`Promise<boolean>`
+- Checks if it's currently daylight (after sunrise but before sunset).
+- **Returns:** `Promise<boolean>`
 
 ### `isNightTime(options?: AfterOptions)`
-Checks if it's currently nighttime.  
-This returns `true` if it's after sunset.
+- Checks if it's currently nighttime (after sunset).
+- **Returns:** `Promise<boolean>`
 
-**Parameters:**
-- `lat?: number`
-- `lon?: number`
-- `useGeolocation?: boolean`
-- `time?: Date` (defaults to now)
+### `onSunlightChange(seconds: number, options?: AfterOptions)`
+- Sets an interval (every `seconds` seconds) and returns an object with chainable methods:
+  - `atNight(callback: Function)`: Runs `callback` upon transitioning from daylight to night.
+  - `atDaylight(callback: Function)`: Runs `callback` upon transitioning from night to daylight.
+  - `atSunlightToggle(callback: (hasSunlight: boolean) => void)`: Runs `callback` whenever daylight status toggles.
+- **Returns:** An object allowing chained calls to `atNight`, `atDaylight`, and `atSunlightToggle`.
 
-**Returns:**  
-`Promise<boolean>`
-
-**Priority of Location for All Functions:**
-1. If `lat` and `lon` are provided, those are used.
-2. Else if `useGeolocation` is `true`, it attempts to find the user's location.
-3. Otherwise, defaults to Equator (0,0).
+**Priority of Location:**
+1. `lat` & `lon` if provided.
+2. If `useGeolocation: true`, tries browser geolocation.
+3. Defaults to the Equator (0,0).
 
 **Earth Tilt Consideration:**
-All functions rely on `suncalc`, which uses latitude, longitude, and date to inherently account for Earth's tilt and seasonal variations.
+`getTimes()` from SunCalc inherently takes Earth’s tilt into account when computing sunrise/sunset times.
 
-## Example in Browser
+## Requirements
 
-If you're using this in a browser environment with bundling:
-
-```typescript
-import { isDaylight, isNightTime } from 'sun-tracker-js';
-
-document.getElementById('checkDaylightBtn')?.addEventListener('click', async () => {
-  const daylight = await isDaylight({ useGeolocation: true });
-  alert(`Is it daylight at your location? ${daylight}`);
-});
-
-document.getElementById('checkNightBtn')?.addEventListener('click', async () => {
-  const night = await isNightTime({ useGeolocation: true });
-  alert(`Is it nighttime at your location? ${night}`);
-});
-```
-
-## Building & Development
-
-1. Clone the repository:
-   ```bash
-   git clone https://github.com/yourusername/sun-tracker-js.git
-   cd sun-tracker-js
-   ```
-
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-
-3. Build:
-   ```bash
-   npm run build
-   ```
-   Compiled files will be output to `dist/`.
-
-4. Link it locally to test in another project:
-   ```bash
-   npm link
-   ```
-
-## Contributing
-
-Contributions, issues, and feature requests are welcome. Feel free to open a PR or issue on the GitHub repository.
+- Browser environment with optional geolocation.
+- Running under HTTPS if geolocation is used.
 
 ## License
 

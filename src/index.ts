@@ -6,16 +6,10 @@ const SUNSET = "sunset";
 export interface AfterOptions {
     lat?: number;
     lon?: number;
-    useGeolocation?: boolean;
-    time?: Date;
+    useGeolocation?: boolean;  // If true, attempt browser geolocation
+    time?: Date;               // Optional time to check, defaults to current time
 }
 
-/**
- * - If `useGeolocation` is true, tries to get the user’s location from the browser.
- * - If lat/lon are provided, uses those coordinates.
- * - Defaults to the Equator if none is provided.
- * - Earth's tilt is inherently accounted for via suncalc's calculations based on date and coordinates.
- */
 function isAfter(afterOption: "sunrise" | "sunset", {
     lat,
     lon,
@@ -28,14 +22,14 @@ function isAfter(afterOption: "sunrise" | "sunset", {
 
         function checkWithCoordinates(latitude: number = defaultLat, longitude: number = defaultLon) {
             const times = getTimes(time, latitude, longitude);
-            const after = times[afterOption];
+            const afterTime = times[afterOption];
             const currentHour = time.getHours();
-            const afterHour = after.getHours();
+            const afterHour = afterTime.getHours();
 
             let isAfterTime = currentHour > afterHour;
 
             if (currentHour === afterHour) {
-                isAfterTime = time.getMinutes() >= after.getMinutes();
+                isAfterTime = time.getMinutes() >= afterTime.getMinutes();
             }
 
             resolve(isAfterTime);
@@ -64,36 +58,95 @@ function isAfter(afterOption: "sunrise" | "sunset", {
 }
 
 /**
- * Returns a Promise that resolves to `true` if it is currently after dawn at the given location.
-*/
+ * Checks if it's currently after sunrise at the given location.
+ * Returns a Promise that resolves to `true` if after sunrise, `false` otherwise.
+ */
 export async function isAfterSunrise(afterOptions: AfterOptions) {
     return await isAfter(SUNRISE, afterOptions);
 }
 
 /**
- * Returns a Promise that resolves to `true` if it is currently after sunset at the given location.
+ * Checks if it's currently after sunset at the given location.
+ * Returns a Promise that resolves to `true` if after sunset, `false` otherwise.
  */
 export async function isAfterSunset(afterOptions: AfterOptions) {
     return await isAfter(SUNSET, afterOptions);
 }
 
 /**
- * Returns a Promise that resolves to `true` if it is currently daylight.
+ * Checks if it's currently daylight.
+ * Daylight means it's after sunrise but not yet after sunset.
+ * Returns a Promise that resolves to `true` if currently daylight, `false` otherwise.
  */
 export async function isDaylight(afterOptions: AfterOptions) {
-    const [
-        isItAfterSunrise,
-        isItAfterSunset
-    ] = await Promise.all([isAfterSunrise(afterOptions), isAfterSunset(afterOptions)]);
+    const [isItAfterSunrise, isItAfterSunset] = await Promise.all([
+        isAfterSunrise(afterOptions),
+        isAfterSunset(afterOptions)
+    ]);
 
     return isItAfterSunrise && !isItAfterSunset;
 }
 
 /**
- * Returns a Promise that resolves to `true` if it is currently nightime.
+ * Checks if it's currently nighttime.
+ * Nighttime means it is after sunset.
+ * Returns a Promise that resolves to `true` if currently night, `false` otherwise.
  */
 export async function isNightTime(afterOptions: AfterOptions) {
     const isItAfterSunset = await isAfterSunset(afterOptions);
-
     return isItAfterSunset;
+}
+
+/**
+ * Returns a chainable object with three methods:
+ * - atNight(callback): Executes the callback once when it transitions from daylight to night.
+ * - atDaylight(callback): Executes the callback once when it transitions from night to daylight.
+ * - atSunlightToggle(callback): Executes the callback whenever the state toggles between having daylight and not.
+ */
+export async function onSunlightChange(seconds = 1, afterOptions: AfterOptions) {
+    let hadDaylight = await isDaylight(afterOptions);
+    const secondsInterval = seconds * 1e3;
+
+    function getSunChangeChain(callback: Function) {
+        setInterval(() => {
+            callback();
+        }, secondsInterval);
+
+        return chain;
+    }
+
+    const chain = {
+        atNight(callback: Function) {
+            return getSunChangeChain(async () => {
+                const isItNightTime = await isNightTime(afterOptions);
+
+                if (isItNightTime && hadDaylight) {
+                    hadDaylight = false;
+                    callback();
+                }
+            });
+        },
+        atDaylight(callback: Function) {
+            return getSunChangeChain(async () => {
+                const isItDaylight = await isDaylight(afterOptions);
+
+                if (isItDaylight && !hadDaylight) {
+                    hadDaylight = true;
+                    callback();
+                }
+            });
+        },
+        atSunlightToggle(callback: (havingSunlight: boolean) => void) {
+            return getSunChangeChain(async () => {
+                const isItDaylight = await isDaylight(afterOptions);
+
+                if (isItDaylight !== hadDaylight) {
+                    hadDaylight = isItDaylight;
+                    callback(hadDaylight);
+                }
+            });
+        }
+    }
+
+    return chain;
 }
