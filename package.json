@@ -1,0 +1,26 @@
+{
+  "name": "sun-tracker-js",
+  "version": "1.0.0",
+  "description": "A simple library to check if it's after dawn or after sunset at a given location using suncalc",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "scripts": {
+    "build": "tsc",
+    "prepare": "npm run build"
+  },
+  "keywords": [
+    "sun",
+    "dawn",
+    "suncalc",
+    "geolocation"
+  ],
+  "author": "Your Name",
+  "license": "MIT",
+  "dependencies": {
+    "suncalc": "^1.9.0"
+  },
+  "devDependencies": {
+    "@types/suncalc": "^1.9.0",
+    "typescript": "^5.2.2"
+  }
+}
