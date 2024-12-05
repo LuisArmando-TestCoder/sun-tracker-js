@@ -8,6 +8,10 @@
     "build": "tsc",
     "prepare": "npm run build"
   },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/luisarmando-testcoder/sun-tracker-js.git"
+  },
   "keywords": [
     "sun",
     "dawn",
