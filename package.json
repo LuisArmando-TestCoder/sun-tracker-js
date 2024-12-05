@@ -1,6 +1,6 @@
 {
   "name": "sun-tracker-js",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "A lightweight library that determines whether it's currently after sunrise or after sunset at a specified location, leveraging suncalc for accurate astronomical calculations.",
   "main": "dist/index.js",
   "module": "dist/index.js",
