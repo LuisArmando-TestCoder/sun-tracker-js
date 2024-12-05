@@ -61,7 +61,7 @@ function isAfter(afterOption: "sunrise" | "sunset", {
  * Checks if it's currently after sunrise at the given location.
  * Returns a Promise that resolves to `true` if after sunrise, `false` otherwise.
  */
-async function isAfterSunrise(afterOptions: AfterOptions = {}) {
+async function isAfterSunrise(afterOptions?: AfterOptions) {
     return await isAfter(SUNRISE, afterOptions);
 }
 
@@ -69,7 +69,7 @@ async function isAfterSunrise(afterOptions: AfterOptions = {}) {
  * Checks if it's currently after sunset at the given location.
  * Returns a Promise that resolves to `true` if after sunset, `false` otherwise.
  */
-async function isAfterSunset(afterOptions: AfterOptions = {}) {
+async function isAfterSunset(afterOptions?: AfterOptions) {
     return await isAfter(SUNSET, afterOptions);
 }
 
@@ -78,7 +78,7 @@ async function isAfterSunset(afterOptions: AfterOptions = {}) {
  * Daylight means it's after sunrise but not yet after sunset.
  * Returns a Promise that resolves to `true` if currently daylight, `false` otherwise.
  */
-async function isDaylight(afterOptions: AfterOptions = {}) {
+async function isDaylight(afterOptions?: AfterOptions) {
     const [isItAfterSunrise, isItAfterSunset] = await Promise.all([
         isAfterSunrise(afterOptions),
         isAfterSunset(afterOptions)
@@ -92,7 +92,7 @@ async function isDaylight(afterOptions: AfterOptions = {}) {
  * Nighttime means it is after sunset.
  * Returns a Promise that resolves to `true` if currently night, `false` otherwise.
  */
-async function isNightTime(afterOptions: AfterOptions = {}) {
+async function isNightTime(afterOptions?: AfterOptions) {
     const isItAfterSunset = await isAfterSunset(afterOptions);
     return isItAfterSunset;
 }
@@ -103,7 +103,7 @@ async function isNightTime(afterOptions: AfterOptions = {}) {
  * - atDaylight(callback): Executes the callback once when it transitions from night to daylight.
  * - atSunlightToggle(callback): Executes the callback whenever the state toggles between having daylight and not.
  */
-async function onSunlightChange(seconds = 1, afterOptions: AfterOptions = {}) {
+async function onSunlightChange(seconds = 1, afterOptions?: AfterOptions) {
     let hadDaylight = await isDaylight(afterOptions);
     const secondsInterval = seconds * 1e3;
 
