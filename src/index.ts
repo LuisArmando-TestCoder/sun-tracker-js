@@ -1,4 +1,4 @@
-import { getTimes } from 'suncalc';
+import suncalc from 'suncalc';
 
 const SUNRISE = "sunrise";
 const SUNSET = "sunset";
@@ -21,7 +21,7 @@ function isAfter(afterOption: "sunrise" | "sunset", {
         const defaultLon = 0;
 
         function checkWithCoordinates(latitude: number = defaultLat, longitude: number = defaultLon) {
-            const times = getTimes(time, latitude, longitude);
+            const times = suncalc.getTimes(time, latitude, longitude);
             const afterTime = times[afterOption];
             const currentHour = time.getHours();
             const afterHour = afterTime.getHours();
